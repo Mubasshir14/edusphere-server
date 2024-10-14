@@ -1,14 +1,16 @@
-require('dotenv').config();
+const jwt = require('jsonwebtoken');
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
-const jwt = require('jsonwebtoken');
-
-const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+require('dotenv').config();
 const port = process.env.PORT || 5000;
 
+
+
 app.use(cors({
-    origin: ['http://localhost:5173'],
+    origin: ['http://localhost:5173', 'http://localhost:5174'],
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
@@ -25,11 +27,6 @@ const client = new MongoClient(uri, {
 });
 
 
-
-
-
-
-
 async function run() {
     try {
         await client.connect();
@@ -37,8 +34,13 @@ async function run() {
         const userCollection = client.db('eduDB').collection('users');
         const bookmarkCollection = client.db('eduDB').collection('bookmarks');
         const commentsCollection = client.db('eduDB').collection('comments');
+        const idCollection = client.db('eduDB').collection('studentsId');
         const likesCollection = client.db('eduDB').collection('like');
         const newsfeedCollection = client.db('eduDB').collection('newsFeed');
+        const messageCollection = client.db('eduDB').collection('messages');
+        const notificationCollection = client.db('eduDB').collection('notifications');
+
+
 
 
         // Generate JWT Token
@@ -86,11 +88,36 @@ async function run() {
             res.send(result);
         });
 
+        app.get('/studentId', async (req, res) => {
+            const result = await idCollection.find().toArray();
+            res.send(result);
+        });
+
         // get user by id
         app.get('/users/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await userCollection.findOne(query);
+            res.send(result);
+        })
+
+        //set user role to "admin"
+        app.patch('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const filter = { _id: new ObjectId(id) };
+            const updatedDoc = {
+                $set: {
+                    role: 'admin'
+                }
+            };
+            const result = await userCollection.updateOne(filter, updatedDoc);
+            res.send(result);
+        });
+
+        app.delete('/users/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await userCollection.deleteOne(query);
             res.send(result);
         })
 
@@ -104,6 +131,13 @@ async function run() {
         app.post('/newsfeed', async (req, res) => {
             const feedData = req.body;
             const result = await newsfeedCollection.insertOne(feedData);
+            res.send(result);
+        });
+
+        app.delete('/newsfeed/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await newsfeedCollection.deleteOne(query);
             res.send(result);
         });
 
@@ -191,7 +225,7 @@ async function run() {
                 const postId = req.params.postId;
                 const comments = await commentsCollection
                     .find({ postId: postId })
-                    .sort({ time: -1 }) 
+                    .sort({ time: -1 })
                     .toArray();
 
                 res.send(comments);
@@ -205,12 +239,12 @@ async function run() {
             try {
                 const comment = req.body;
 
-                
+
                 if (!comment.postId || !comment.userEmail || !comment.userComment) {
                     return res.status(400).send({ error: 'Missing required fields' });
                 }
 
-           
+
                 if (!comment.time) {
                     comment.time = new Date().toISOString();
                 }
@@ -222,7 +256,7 @@ async function run() {
             }
         });
 
-        
+
         app.delete('/comments/:commentId', async (req, res) => {
             try {
                 const commentId = req.params.commentId;
@@ -240,10 +274,10 @@ async function run() {
 
         // Get all bookmark items for a specific user
         app.get('/bookmark', async (req, res) => {
-
             const result = await bookmarkCollection.find().toArray();
             res.send(result);
         });
+
 
         // Add a new bookmark item
         app.post('/bookmark', async (req, res) => {
@@ -253,12 +287,43 @@ async function run() {
         });
 
         // Delete a bookmark item by ID
-        app.delete('/carts/:id', async (req, res) => {
+        app.delete('/bookmark/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
-            const result = await cartCollection.deleteOne(query);
+            const result = await bookmarkCollection.deleteOne(query);
             res.send(result);
         });
+
+        // post message
+        app.post('/messages', async (req, res) => {
+            const messagePayload = req.body;
+            const result = await messageCollection.insertOne(messagePayload);
+            res.send(result);
+        });
+        // get message
+        app.get('/messages', async (req, res) => {
+            const result = await messageCollection.find().toArray();
+            res.send(result);
+        });
+
+        app.post('/notifications', async (req, res) => {
+            const notificationPayload = req.body;
+            const result = await notificationCollection.insertOne(notificationPayload);
+            res.send(result);
+        });
+
+        app.get('/notifications', async (req, res) => {
+            const result = await notificationCollection.find().toArray();
+            res.send(result);
+        });
+        
+        app.delete('/notification/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await notificationCollection.deleteOne(query);
+            res.send(result);
+        });
+        
 
 
 
@@ -278,3 +343,7 @@ app.get('/', (req, res) => {
 app.listen(port, () => {
     console.log(`EduSphere is Running on Port: ${port}`);
 });
+// server.listen(port, () => {
+//     console.log(`EduSphere is Running on Port: ${port}`);
+// });
+
