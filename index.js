@@ -39,6 +39,7 @@ async function run() {
         const newsfeedCollection = client.db('eduDB').collection('newsFeed');
         const messageCollection = client.db('eduDB').collection('messages');
         const notificationCollection = client.db('eduDB').collection('notifications');
+        const studentsIdCollection = client.db('eduDB').collection('studentsId');
 
 
 
@@ -316,14 +317,33 @@ async function run() {
             const result = await notificationCollection.find().toArray();
             res.send(result);
         });
-        
+
         app.delete('/notification/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await notificationCollection.deleteOne(query);
             res.send(result);
         });
-        
+
+
+        app.get('/studentId', async (req, res) => {
+            const result = await studentsIdCollection.find().toArray();
+            res.send(result);
+        })
+
+        app.delete('/studentId/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await studentsIdCollection.deleteOne(query)
+            res.send(result);
+        })
+
+        app.post('/studentId', async (req, res) => {
+            const newStudentId = req.body;
+            const result = await studentsIdCollection.insertOne(newStudentId);
+            res.send(result);
+        })
+
 
 
 
