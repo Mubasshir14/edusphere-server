@@ -16,6 +16,7 @@ app.use(cors({
 }));
 app.use(express.json());
 
+
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.3aom8f0.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 const client = new MongoClient(uri, {
@@ -114,6 +115,61 @@ async function run() {
             const result = await userCollection.updateOne(filter, updatedDoc);
             res.send(result);
         });
+
+        app.patch('/updateusers/:id', async (req, res) => {
+            const id = req.params.id;  
+            const { jobStatus, company } = req.body;  
+        
+            const filter = { _id: new ObjectId(id) }; 
+            const updatedDoc = {
+                $set: {
+                    jobStatus: jobStatus, 
+                    company: company       
+                }
+            };
+        
+            try {
+                
+                const result = await userCollection.updateOne(filter, updatedDoc);
+                
+                if (result.modifiedCount === 1) {
+                    res.status(200).send({ message: 'User updated successfully', result });
+                } else {
+                    res.status(404).send({ message: 'User not found or no update made' });
+                }
+            } catch (error) {
+                console.error('Error updating user:', error);
+                res.status(500).send({ message: 'Internal server error' });
+            }
+        });
+
+        app.patch('/userDataDesignation/:id', async (req, res) => {
+            const id = req.params.id;  
+            const { designation } = req.body; 
+            
+            const filter = { _id: new ObjectId(id) };  
+            const updatedDoc = {
+                $set: {
+                    designation: designation,  
+                }
+            };
+        
+            try {
+                
+                const result = await userCollection.updateOne(filter, updatedDoc);
+                
+                if (result.modifiedCount === 1) {
+                    res.status(200).send({ message: 'User updated successfully', result });
+                } else {
+                    res.status(404).send({ message: 'User not found or no update made' });
+                }
+            } catch (error) {
+                console.error('Error updating user:', error);
+                res.status(500).send({ message: 'Internal server error' });
+            }
+        });
+        
+        
 
         app.delete('/users/:id', async (req, res) => {
             const id = req.params.id;
@@ -234,6 +290,11 @@ async function run() {
                 res.status(500).send({ error: error.message });
             }
         });
+
+        app.get('/comments', async(req, res)=>{
+            const result = await commentsCollection.find().toArray();
+            res.send(result);
+        })
 
 
         app.post('/comments', async (req, res) => {
