@@ -10,7 +10,7 @@ const port = process.env.PORT || 5000;
 
 
 app.use(cors({
-    origin: ['http://localhost:5173', 'http://localhost:5174'],
+    origin: ['http://localhost:5173', 'http://localhost:5174', 'https://edusphere-88b11.web.app'],
     methods: ['GET', 'POST', 'PATCH', 'PUT', 'DELETE'],
     allowedHeaders: ['Content-Type', 'Authorization'],
 }));
